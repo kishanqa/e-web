@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mini Shop</title>
+<style>
+  :root { --bg:#f7f7f5; --card:#fff; --ink:#1d1d1f; --muted:#6b6b70; --accent:#2f6f4f; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:var(--bg); color:var(--ink); }
+  header { display:flex; justify-content:space-between; align-items:center; padding:16px 24px; background:var(--card); border-bottom:1px solid #e5e5e0; position:sticky; top:0; }
+  header h1 { margin:0; font-size:1.25rem; }
+  button { cursor:pointer; border:0; border-radius:8px; padding:8px 14px; background:var(--accent); color:#fff; font-size:.9rem; }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  main { max-width:960px; margin:24px auto; padding:0 16px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:16px; }
+  .card { background:var(--card); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; flex-direction:column; gap:8px; }
+  .emoji { font-size:3rem; text-align:center; background:#f0f0ec; border-radius:8px; padding:16px 0; }
+  .price { color:var(--muted); }
+  aside { position:fixed; top:0; right:-360px; width:340px; height:100%; background:var(--card); box-shadow:-4px 0 16px rgba(0,0,0,.12); padding:20px; transition:right .25s; overflow:auto; }
+  aside.open { right:0; }
+  .row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee; gap:8px; }
+  .total { font-weight:700; margin:16px 0; display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛍️ Mini Shop</h1>
+  <button id="cartBtn">Cart (<span id="count">0</span>)</button>
+</header>
+<main><div class="grid" id="grid"></div></main>
+<aside id="cart">
+  <div class="row"><strong>Your cart</strong><button class="ghost" id="closeBtn">Close</button></div>
+  <div id="items"></div>
+  <div class="total"><span>Total</span><span id="total">$0.00</span></div>
+  <button id="checkout" style="width:100%">Checkout</button>
+</aside>
+<script>
+const products = [
+  { id:1, name:"Ceramic Mug", price:14.5, emoji:"☕" },
+  { id:2, name:"Canvas Tote", price:22, emoji:"👜" },
+  { id:3, name:"Notebook", price:9.99, emoji:"📓" },
+  { id:4, name:"Desk Plant", price:18, emoji:"🪴" },
+  { id:5, name:"Headphones", price:59, emoji:"🎧" },
+  { id:6, name:"Sunglasses", price:35, emoji:"🕶️" }
+];
+let cart = JSON.parse(localStorage.getItem("cart") || "{}");
+const $ = id => document.getElementById(id);
+const money = n => "$" + n.toFixed(2);
+
+$("grid").innerHTML = products.map(p => `
+  <div class="card">
+    <div class="emoji">${p.emoji}</div>
+    <strong>${p.name}</strong>
+    <span class="price">${money(p.price)}</span>
+    <button onclick="add(${p.id})">Add to cart</button>
+  </div>`).join("");
+
+function save(){ localStorage.setItem("cart", JSON.stringify(cart)); render(); }
+function add(id){ cart[id] = (cart[id] || 0) + 1; save(); }
+function change(id, d){ cart[id] += d; if (cart[id] <= 0) delete cart[id]; save(); }
+
+function render(){
+  let total = 0, count = 0;
+  $("items").innerHTML = Object.entries(cart).map(([id, qty]) => {
+    const p = products.find(x => x.id == id);
+    total += p.price * qty; count += qty;
+    return `<div class="row"><span>${p.emoji} ${p.name}</span>
+      <span><button class="ghost" onclick="change(${id},-1)">−</button> ${qty}
+      <button class="ghost" onclick="change(${id},1)">+</button></span></div>`;
+  }).join("") || "<p class='price'>Your cart is empty.</p>";
+  $("total").textContent = money(total);
+  $("count").textContent = count;
+}
+
+$("cartBtn").onclick = () => $("cart").classList.add("open");
+$("closeBtn").onclick = () => $("cart").classList.remove("open");
+$("checkout").onclick = () => {
+  if (!Object.keys(cart).length) return alert("Your cart is empty.");
+  alert("Thanks for your order! (Demo only, no payment taken.)");
+  cart = {}; save();
+};
+render();
+</script>
+</body>
+</html>
